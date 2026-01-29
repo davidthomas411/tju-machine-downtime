@@ -14,7 +14,7 @@ export default async function DashboardPage({
   searchParams: Promise<{ site?: string }>
 }) {
   const params = await searchParams
-  const basicUser = getBasicAuthUser()
+  const basicUser = await getBasicAuthUser()
   const profile = basicUser ? await getUserById(basicUser.username) : null
 
   const sites = await getSites()

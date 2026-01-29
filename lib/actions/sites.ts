@@ -23,7 +23,7 @@ export async function getSiteWithSettings(siteId: string) {
 }
 
 export async function createSite(formData: FormData) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }
@@ -67,7 +67,7 @@ export async function createSite(formData: FormData) {
 }
 
 export async function updateSite(siteId: string, formData: FormData) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }
@@ -95,7 +95,7 @@ export async function updateSite(siteId: string, formData: FormData) {
 }
 
 export async function updateSiteSettings(siteId: string, formData: FormData) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }
@@ -133,7 +133,7 @@ export async function updateSiteSettings(siteId: string, formData: FormData) {
 }
 
 export async function deleteSite(siteId: string) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }

@@ -52,7 +52,7 @@ export async function updateMachineStatus(
   status: MachineStatus,
   notes?: string,
 ) {
-  const auth = requireBasicAuth(['admin', 'staff'])
+  const auth = await requireBasicAuth(['admin', 'staff'])
   if ('error' in auth) {
     return { error: auth.error }
   }
@@ -92,7 +92,7 @@ export async function updateMachineStatus(
 }
 
 export async function createMachine(formData: FormData) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }
@@ -126,7 +126,7 @@ export async function createMachine(formData: FormData) {
 }
 
 export async function updateMachine(machineId: string, formData: FormData) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }
@@ -157,7 +157,7 @@ export async function updateMachine(machineId: string, formData: FormData) {
 }
 
 export async function deleteMachine(machineId: string) {
-  const auth = requireBasicAuth(['admin'])
+  const auth = await requireBasicAuth(['admin'])
   if ('error' in auth) {
     return { error: auth.error }
   }

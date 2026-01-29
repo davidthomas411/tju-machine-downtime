@@ -6,7 +6,7 @@ import { getSites } from '@/lib/actions/sites'
 import { getMachines } from '@/lib/actions/machines'
 
 export default async function AdminPage() {
-  const basicUser = getBasicAuthUser()
+  const basicUser = await getBasicAuthUser()
   if (!basicUser) {
     redirect('/login')
   }

@@ -9,7 +9,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const basicUser = getBasicAuthUser()
+  const basicUser = await getBasicAuthUser()
   if (!basicUser) {
     redirect('/login')
   }
