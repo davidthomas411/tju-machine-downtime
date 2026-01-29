@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { TJULogo } from '@/components/tju-logo'
 import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { WeatherWidget } from '@/components/display/weather-widget'
@@ -18,20 +19,41 @@ interface DisplayDashboardProps {
 
 export function DisplayDashboard({ machines, site, sites }: DisplayDashboardProps) {
   const router = useRouter()
+  const supabase = createClient()
   const [activeWidget, setActiveWidget] = useState(0)
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
-    const source = new EventSource('/api/updates')
-    const handleUpdate = () => router.refresh()
-
-    source.addEventListener('update', handleUpdate)
-    source.onmessage = handleUpdate
+    const channel = supabase
+      .channel('display-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'machine_statuses',
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'machines',
+        },
+        () => {
+          router.refresh()
+        }
+      )
+      .subscribe()
 
     return () => {
-      source.close()
+      supabase.removeChannel(channel)
     }
-  }, [router])
+  }, [router, supabase])
 
   useEffect(() => {
     const interval = setInterval(() => {

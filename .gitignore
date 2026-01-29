@@ -25,6 +25,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# legacy folder after flatten (safe to delete locally)
-/linac-machine-status-dashboard/

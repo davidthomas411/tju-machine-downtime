@@ -29,7 +29,7 @@ export function UsersManager({ users }: UsersManagerProps) {
       <CardHeader>
         <CardTitle>User Management</CardTitle>
         <CardDescription>
-          View configured users and their access levels. Credentials are managed via basic auth for now.
+          View registered users and their access levels. Users are created automatically on Supabase signup.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -79,11 +79,10 @@ export function UsersManager({ users }: UsersManagerProps) {
             </ul>
           </div>
           <div className="p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">Basic Auth Notes</h4>
+            <h4 className="font-medium mb-2">Supabase Notes</h4>
             <p className="text-sm text-muted-foreground">
-              Update <span className="font-medium text-foreground">BASIC_AUTH_USERS</span> for login credentials,
-              and edit <span className="font-medium text-foreground">data/store.json</span> to control user roles
-              and site assignments.
+              Create users in Supabase Auth, then set their role and site in the
+              <span className="font-medium text-foreground"> profiles</span> table.
             </p>
           </div>
         </div>

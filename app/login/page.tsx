@@ -1,53 +1,118 @@
-import Image from 'next/image'
-import { TJULogo } from '@/components/tju-logo'
+'use client'
+
+import React from 'react'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { TJULogo } from '@/components/tju-logo'
+import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
+    }
+
+    router.push('/dashboard')
+    router.refresh()
+  }
+
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/10">
-      <div className="absolute inset-0 bg-[url('/brand/maps.jpg')] bg-cover bg-center opacity-10" />
-      <div className="relative min-h-screen flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-2xl bg-card/90 backdrop-blur border border-border rounded-2xl shadow-2xl p-8">
-          <div className="flex flex-col items-center text-center gap-6">
-            <TJULogo size="lg" />
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground">LINAC Status Dashboard</h1>
-              <p className="text-muted-foreground">
-                This dashboard uses browser-based Basic Authentication for now.
-                If you need access, contact your department administrator.
-              </p>
-            </div>
-
-            <div className="w-full rounded-xl border border-border bg-muted/30 p-4 text-left">
-              <p className="text-sm font-semibold text-foreground">Quick start (local dev)</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Default users are <span className="font-medium text-foreground">admin</span> and
-                <span className="font-medium text-foreground"> user1</span> with passwords matching their usernames.
-                Update <span className="font-medium text-foreground">BASIC_AUTH_USERS</span> to change them.
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3 w-full">
-              <Button asChild className="flex-1 bg-primary text-primary-foreground">
-                <a href="/dashboard">Go to Dashboard</a>
-              </Button>
-              <Button asChild variant="outline" className="flex-1">
-                <a href="/api/logout">Switch User</a>
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-3 pt-4 border-t border-border w-full justify-center">
-              <Image
-                src="/brand/Blue-TJU_logo.jpg"
-                alt="Thomas Jefferson University"
-                width={160}
-                height={46}
-                className="object-contain"
-              />
-              <span className="text-xs text-muted-foreground">Department of Radiation Oncology</span>
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
+      <div className="w-full max-w-md">
+        <div className="flex justify-center mb-8">
+          <TJULogo size="lg" />
         </div>
+
+        <Card className="border-primary/20 shadow-xl">
+          <CardHeader className="text-center space-y-1">
+            <CardTitle className="text-2xl font-bold text-primary">LINAC Status Dashboard</CardTitle>
+            <CardDescription>Sign in to manage machine status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
+                  <AlertCircle className="h-4 w-4" />
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@jefferson.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-background"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="bg-background"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-border text-center">
+              <p className="text-sm text-muted-foreground">
+                Need access? Contact your department administrator.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Thomas Jefferson University Health System
+        </p>
       </div>
     </div>
   )

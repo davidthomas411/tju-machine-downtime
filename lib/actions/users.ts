@@ -1,29 +1,37 @@
 'use server'
 
-import { readStore } from '@/lib/data/store'
+import { createClient } from '@/lib/supabase/server'
 import type { Profile, Site } from '@/lib/types'
 
 export async function getUsers(): Promise<(Profile & { site: Site | null })[]> {
-  const store = await readStore()
-  const sitesById = new Map(store.sites.map((site) => [site.id, site]))
-  return [...store.users]
-    .map((user) => ({
-      ...user,
-      site: user.site_id ? sitesById.get(user.site_id) || null : null,
-    }))
-    .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*, site:sites(*)')
+    .order('full_name')
+
+  if (error) {
+    console.error('Error fetching users:', error)
+    return []
+  }
+
+  return data || []
 }
 
 export async function getUserById(userId: string | null | undefined): Promise<Profile | null> {
   if (!userId) return null
-  const store = await readStore()
-  const user = store.users.find((item) => item.id === userId) || null
-  if (!user) return null
+  const supabase = await createClient()
 
-  if (user.site_id) {
-    const site = store.sites.find((item) => item.id === user.site_id) || null
-    return { ...user, site }
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*, site:sites(*)')
+    .eq('id', userId)
+    .single()
+
+  if (error) {
+    return null
   }
 
-  return user
+  return data
 }

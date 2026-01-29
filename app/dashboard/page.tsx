@@ -1,10 +1,8 @@
 import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { RealTimeWrapper } from '@/components/dashboard/realtime-wrapper'
 import { SiteSwitcher } from '@/components/dashboard/site-switcher'
-import { getBasicAuthUser } from '@/lib/basic-auth-server'
-import { getUserById } from '@/lib/actions/users'
-import { getSites } from '@/lib/actions/sites'
-import { getMachinesWithStatus } from '@/lib/actions/machines'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,17 +12,47 @@ export default async function DashboardPage({
   searchParams: Promise<{ site?: string }>
 }) {
   const params = await searchParams
-  const basicUser = await getBasicAuthUser()
-  const profile = basicUser ? await getUserById(basicUser.username) : null
+  const supabase = await createClient()
 
-  const sites = await getSites()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  const { data: sites } = await supabase
+    .from('sites')
+    .select('*')
+    .order('name')
 
   const restrictedSiteId = profile?.role !== 'admin' ? profile?.site_id : null
   const selectedSiteId = restrictedSiteId || params.site || sites?.[0]?.id
 
-  const machines = await getMachinesWithStatus(selectedSiteId)
+  let machinesQuery = supabase
+    .from('machines')
+    .select(`
+      *,
+      site:sites(*),
+      machine_statuses(*)
+    `)
+    .eq('is_active', true)
+    .order('display_order')
 
-  const machinesWithStatus = machines || []
+  if (selectedSiteId) {
+    machinesQuery = machinesQuery.eq('site_id', selectedSiteId)
+  }
+
+  const { data: machines } = await machinesQuery
+
+  const machinesWithStatus = machines?.map((machine) => ({
+    ...machine,
+    currentStatus: machine.machine_statuses?.[0] || null,
+  })) || []
 
   const canEdit = profile?.role === 'admin' || profile?.role === 'staff'
   const selectedSite = sites?.find((s) => s.id === selectedSiteId)

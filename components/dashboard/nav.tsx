@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import type { User } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
 import { TJULogoCompact } from '@/components/tju-logo'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,26 +16,29 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Activity, Settings, UserIcon, LogOut, Menu, X, MonitorIcon as MonitorCog } from 'lucide-react'
 import type { Profile } from '@/lib/types'
-import type { BasicAuthUser } from '@/lib/basic-auth'
 
 interface NavProps {
-  user: BasicAuthUser
+  user: User
   profile: Profile | null
 }
 
 export function DashboardNav({ user, profile }: NavProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const supabase = createClient()
 
-  const isAdmin = (profile?.role || user.role) === 'admin'
+  const isAdmin = profile?.role === 'admin'
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard', icon: Activity },
     ...(isAdmin ? [{ href: '/dashboard/admin', label: 'Admin', icon: Settings }] : []),
   ]
 
-  function handleSignOut() {
-    window.location.href = '/api/logout'
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
   }
 
   return (
@@ -89,21 +94,21 @@ export function DashboardNav({ user, profile }: NavProps) {
                 <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-accent-foreground">
                   <UserIcon className="h-4 w-4" />
                 </div>
-                <span className="hidden lg:block">{profile?.full_name || user.fullName}</span>
+                <span className="hidden lg:block">{profile?.full_name || user.email}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5 text-sm">
-                <p className="font-medium">{profile?.full_name || user.fullName}</p>
+                <p className="font-medium">{profile?.full_name || 'User'}</p>
                 <p className="text-muted-foreground text-xs">{profile?.email || user.email}</p>
                 <p className="text-muted-foreground text-xs capitalize mt-1">
-                  Role: {profile?.role || user.role}
+                  Role: {profile?.role || 'viewer'}
                 </p>
               </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                 <LogOut className="h-4 w-4 mr-2" />
-                Switch User
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
