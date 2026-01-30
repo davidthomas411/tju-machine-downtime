@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { TJULogo } from '@/components/tju-logo'
+import { BrandLogo } from '@/components/brand-logo'
 import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { WeatherWidget } from '@/components/display/weather-widget'
 import { ClockWidget } from '@/components/display/clock-widget'
 import { Button } from '@/components/ui/button'
 import type { Machine, MachineStatusRecord, Site } from '@/lib/types'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Maximize2 } from 'lucide-react'
+import { normalizeNetwork, type NetworkKey } from '@/lib/network'
 
 interface DisplayDashboardProps {
   machines: (Machine & { currentStatus: MachineStatusRecord | null })[]
@@ -63,43 +64,105 @@ export function DisplayDashboard({ machines, site, sites }: DisplayDashboardProp
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      router.refresh()
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [router])
+
+  async function handleFullscreen() {
+    if (typeof document === 'undefined') return
+    try {
+      if (document.fullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if ('webkitExitFullscreen' in document) {
+          await (document as Document & { webkitExitFullscreen?: () => Promise<void> }).webkitExitFullscreen?.()
+        }
+        return
+      }
+
+      const element = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>
+      }
+
+      if (element.requestFullscreen) {
+        await element.requestFullscreen()
+      } else if (element.webkitRequestFullscreen) {
+        await element.webkitRequestFullscreen()
+      }
+    } catch (error) {
+      console.error('Fullscreen request failed:', error)
+    }
+  }
+
   const onTimeCount = machines.filter((m) => !m.currentStatus || m.currentStatus.status === 'on_time').length
   const delayedCount = machines.filter((m) => m.currentStatus?.status?.startsWith('delayed_')).length
   const downCount = machines.filter((m) => m.currentStatus?.status?.startsWith('down_')).length
+  const activeNetwork = normalizeNetwork(site?.network || null) || 'tju'
+  const isLvhn = activeNetwork === 'lvhn'
+  const headerClass = isLvhn
+    ? 'bg-white text-slate-900 border-b border-slate-200'
+    : 'bg-primary text-primary-foreground'
+
+  const networks = Array.from(new Set(
+    sites.map((s) => normalizeNetwork(s.network || null) || 'tju')
+  )) as NetworkKey[]
+
+  const sitesByNetwork = networks.reduce((acc, network) => {
+    acc[network] = sites.filter((s) => (normalizeNetwork(s.network || null) || 'tju') === network)
+    return acc
+  }, {} as Record<NetworkKey, Site[]>)
+
+  function handleNetworkChange(nextNetwork: NetworkKey) {
+    if (nextNetwork === activeNetwork) return
+    const nextSites = sitesByNetwork[nextNetwork] || []
+    const fallbackSite = nextSites[0]
+    const params = new URLSearchParams()
+    params.set('network', nextNetwork)
+    if (fallbackSite) {
+      params.set('site', fallbackSite.id)
+    }
+    router.push(`/display?${params.toString()}`)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
-      <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-8 py-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100" data-network={activeNetwork}>
+      <header className={headerClass}>
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-8 py-6">
           <div className="flex items-center gap-5">
-            <TJULogo size="lg" className="[&_span]:text-primary-foreground [&_span]:opacity-90" />
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.3em] text-primary-foreground/60">
-                Radiation Oncology
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight">LINAC Status</h1>
-                <span className="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-primary-foreground/15 text-primary-foreground/80">
-                  Display Mode
-                </span>
-              </div>
-              {site && (
-                <p className="text-sm text-primary-foreground/70">{site.name}</p>
-              )}
-            </div>
+            <BrandLogo network={activeNetwork} variant="compact" size="lg" />
           </div>
           <div className="flex items-center gap-6">
-            <WeatherWidget />
-            <div className="h-10 w-px bg-primary-foreground/20" />
-            <ClockWidget time={currentTime} />
-            <Button
-              variant="ghost"
-              className="text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground"
-              onClick={() => router.push('/dashboard')}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Staff Console
-            </Button>
+            <WeatherWidget tone={isLvhn ? 'dark' : 'light'} network={activeNetwork} />
+            <div className={`h-10 w-px ${isLvhn ? 'bg-slate-200' : 'bg-primary-foreground/20'}`} />
+            <ClockWidget time={currentTime} tone={isLvhn ? 'dark' : 'light'} />
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                className={isLvhn
+                  ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  : 'text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground'
+                }
+                onClick={handleFullscreen}
+              >
+                <Maximize2 className="mr-2 h-4 w-4" />
+                Full Screen
+              </Button>
+              <Button
+                variant="ghost"
+                className={isLvhn
+                  ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  : 'text-primary-foreground/80 hover:bg-primary-foreground/10 hover:text-primary-foreground'
+                }
+                onClick={() => router.push('/dashboard')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Staff Console
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -109,7 +172,7 @@ export function DisplayDashboard({ machines, site, sites }: DisplayDashboardProp
           <div>
             <h2 className="text-3xl font-semibold text-slate-900">LINAC Machine Status</h2>
             <p className="text-sm text-slate-500">
-              Waiting room display · live operational overview
+              {site?.name || 'Hospital Display'} · live operational overview
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -118,6 +181,29 @@ export function DisplayDashboard({ machines, site, sites }: DisplayDashboardProp
             <StatusPill label="Down" count={downCount} colorClass="bg-status-down" />
           </div>
         </div>
+
+        {networks.length > 1 && (
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              Hospital
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {networks.map((network) => (
+                <button
+                  key={network}
+                  onClick={() => handleNetworkChange(network)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    network === activeNetwork
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  {network === 'tju' ? 'TJU' : 'LVH'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {machines.map((machine) => (
@@ -136,26 +222,7 @@ export function DisplayDashboard({ machines, site, sites }: DisplayDashboardProp
           </div>
         )}
 
-        {sites.length > 1 && (
-          <div className="mt-10 border border-slate-200 bg-white/80 backdrop-blur rounded-xl px-6 py-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Switch Site</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {sites.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => router.push(`/display?site=${s.id}`)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    s.id === site?.id
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {s.code}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        
       </main>
 
       <footer className="border-t border-slate-200 bg-white/80 backdrop-blur">

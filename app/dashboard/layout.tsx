@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import { DashboardNav } from '@/components/dashboard/nav'
 import { createClient } from '@/lib/supabase/server'
 import { isAdminBypassEnabled } from '@/lib/auth/admin-bypass'
+import { cookies } from 'next/headers'
+import { NETWORK_COOKIE_NAME, normalizeNetwork } from '@/lib/network'
 
 export default async function DashboardLayout({
   children,
@@ -23,10 +25,14 @@ export default async function DashboardLayout({
     .single()
 
   const canAdmin = profile?.role === 'admin' || isAdminBypassEnabled()
+  const cookieStore = await cookies()
+  const cookieNetwork = normalizeNetwork(cookieStore.get(NETWORK_COOKIE_NAME)?.value)
+  const profileNetwork = normalizeNetwork(profile?.site?.network || null)
+  const network = cookieNetwork || profileNetwork || 'tju'
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNav user={user} profile={profile} canAdmin={canAdmin} />
+    <div className="min-h-screen bg-background" data-network={network}>
+      <DashboardNav user={user} profile={profile} canAdmin={canAdmin} network={network} />
       <main className="pt-16">
         {children}
       </main>

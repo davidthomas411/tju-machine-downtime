@@ -1,10 +1,20 @@
-export type MachineStatus = 'on_time' | 'delayed_5min' | 'delayed_10min' | 'delayed_15min' | 'delayed_30min' | 'down_temporary' | 'down_day' | 'maintenance'
+export type MachineStatus =
+  | 'on_time'
+  | 'delayed_5min'
+  | 'delayed_10min'
+  | 'delayed_15min'
+  | 'delayed_30min'
+  | 'delayed_60min'
+  | 'down_temporary'
+  | 'down_day'
+  | 'maintenance'
 
 export interface Site {
   id: string
   name: string
   code: string
   address: string | null
+  network?: string | null
   created_at: string
 }
 
@@ -69,6 +79,7 @@ export const STATUS_CONFIG: Record<MachineStatus, { label: string; color: string
   delayed_10min: { label: '10 Min Delay', color: 'text-status-delayed', bgColor: 'bg-status-delayed', icon: 'clock' },
   delayed_15min: { label: '15 Min Delay', color: 'text-status-delayed', bgColor: 'bg-status-delayed', icon: 'clock' },
   delayed_30min: { label: '30 Min Delay', color: 'text-status-delayed', bgColor: 'bg-status-delayed', icon: 'clock' },
+  delayed_60min: { label: '1 Hr Delay', color: 'text-status-delayed', bgColor: 'bg-status-delayed', icon: 'clock' },
   down_temporary: { label: 'Temporarily Down', color: 'text-status-down', bgColor: 'bg-status-down', icon: 'alert-triangle' },
   down_day: { label: 'Down for Day', color: 'text-status-down', bgColor: 'bg-status-down', icon: 'x-circle' },
   maintenance: { label: 'Maintenance', color: 'text-muted-foreground', bgColor: 'bg-muted', icon: 'wrench' },

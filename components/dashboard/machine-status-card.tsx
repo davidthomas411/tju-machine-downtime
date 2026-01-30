@@ -3,6 +3,7 @@
 import React from "react"
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,6 +45,7 @@ export function MachineStatusCard({
   compact = false,
   disableAnimations = false,
 }: MachineStatusCardProps) {
+  const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<MachineStatus>(
     machine.currentStatus?.status || 'on_time'
@@ -69,6 +71,7 @@ export function MachineStatusCard({
     }
     setSaving(false)
     setDialogOpen(false)
+    router.refresh()
   }
 
   const statusColorClasses: Record<MachineStatus, string> = {
@@ -77,10 +80,22 @@ export function MachineStatusCard({
     delayed_10min: 'border-status-delayed bg-status-delayed/10',
     delayed_15min: 'border-status-delayed bg-status-delayed/10',
     delayed_30min: 'border-status-delayed bg-status-delayed/10',
+    delayed_60min: 'border-status-delayed bg-status-delayed/10',
     down_temporary: 'border-status-down bg-status-down/10',
     down_day: 'border-status-down bg-status-down/10',
     maintenance: 'border-muted-foreground bg-muted',
   }
+
+  const statusOptions: MachineStatus[] = [
+    'on_time',
+    'delayed_10min',
+    'delayed_15min',
+    'delayed_30min',
+    'delayed_60min',
+    'down_temporary',
+    'down_day',
+    'maintenance',
+  ]
 
   if (compact) {
     return (
@@ -135,7 +150,9 @@ export function MachineStatusCard({
                   )}
                   <RadioGroup value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as MachineStatus)}>
                     <div className="grid gap-2">
-                      {(Object.entries(STATUS_CONFIG) as [MachineStatus, typeof config][]).map(([status, cfg]) => (
+                      {statusOptions.map((status) => {
+                        const cfg = STATUS_CONFIG[status]
+                        return (
                         <div key={status} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted">
                           <RadioGroupItem value={status} id={status} />
                           <Label htmlFor={status} className="flex items-center gap-2 cursor-pointer flex-1">
@@ -143,7 +160,8 @@ export function MachineStatusCard({
                             <span>{cfg.label}</span>
                           </Label>
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </RadioGroup>
                   

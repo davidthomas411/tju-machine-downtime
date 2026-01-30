@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useTransition } from 'react'
 import {
   Select,
   SelectContent,
@@ -10,28 +11,38 @@ import {
 } from '@/components/ui/select'
 import type { Site } from '@/lib/types'
 import { Building2 } from 'lucide-react'
+import { updateDefaultSite } from '@/lib/actions/users'
 
 interface SiteSwitcherProps {
   sites: Site[]
   currentSiteId?: string
+  persistSelection?: boolean
 }
 
-export function SiteSwitcher({ sites, currentSiteId }: SiteSwitcherProps) {
+export function SiteSwitcher({ sites, currentSiteId, persistSelection = false }: SiteSwitcherProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
   function handleSiteChange(siteId: string) {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams(searchParams.toString())
     params.set('site', siteId)
     router.push(`${pathname}?${params.toString()}`)
+
+    if (persistSelection) {
+      startTransition(async () => {
+        await updateDefaultSite(siteId)
+      })
+    }
   }
 
   return (
     <div className="flex items-center gap-2">
       <Building2 className="h-5 w-5 text-muted-foreground" />
-      <Select value={currentSiteId} onValueChange={handleSiteChange}>
-        <SelectTrigger className="w-[200px] bg-card">
-          <SelectValue placeholder="Select site" />
+      <Select value={currentSiteId} onValueChange={handleSiteChange} disabled={isPending}>
+        <SelectTrigger className="w-[220px] bg-card">
+          <SelectValue placeholder="Select hospital" />
         </SelectTrigger>
         <SelectContent>
           {sites.map((site) => (

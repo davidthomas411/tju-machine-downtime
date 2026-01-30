@@ -13,7 +13,18 @@ interface WeatherData {
   location?: string
 }
 
-export function WeatherWidget() {
+interface WeatherWidgetProps {
+  tone?: 'light' | 'dark'
+  network?: string | null
+}
+
+export function WeatherWidget({ tone = 'light', network }: WeatherWidgetProps) {
+  const mutedText = tone === 'dark' ? 'text-slate-500' : 'text-primary-foreground/60'
+  const pillText = tone === 'dark' ? 'text-slate-700' : 'text-primary-foreground/90'
+  const pillBorder = tone === 'dark' ? 'border-slate-200' : 'border-primary-foreground/15'
+  const pillBg = tone === 'dark' ? 'bg-white/80' : 'bg-primary-foreground/10'
+  const labelMuted = tone === 'dark' ? 'text-slate-500' : 'text-primary-foreground/60'
+
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,7 +34,11 @@ export function WeatherWidget() {
 
     async function fetchWeather() {
       try {
-        const response = await fetch('/api/weather', { cache: 'no-store' })
+        const params = new URLSearchParams()
+        if (network) {
+          params.set('network', network)
+        }
+        const response = await fetch(`/api/weather${params.toString() ? `?${params.toString()}` : ''}`, { cache: 'no-store' })
         if (!response.ok) {
           throw new Error('Weather unavailable')
         }
@@ -51,7 +66,7 @@ export function WeatherWidget() {
       mounted = false
       clearInterval(interval)
     }
-  }, [])
+  }, [network])
 
   const getWeatherIcon = (icon: string) => {
     switch (icon) {
@@ -68,8 +83,8 @@ export function WeatherWidget() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-xs text-primary-foreground/60">
-        <div className="h-2 w-2 rounded-full bg-primary-foreground/30" />
+      <div className={`flex items-center gap-2 text-xs ${mutedText}`}>
+        <div className={`h-2 w-2 rounded-full ${tone === 'dark' ? 'bg-slate-300' : 'bg-primary-foreground/30'}`} />
         <span>Loading weather</span>
       </div>
     )
@@ -77,22 +92,22 @@ export function WeatherWidget() {
 
   if (error || !weather) {
     return (
-      <div className="text-xs text-primary-foreground/60">
+      <div className={`text-xs ${mutedText}`}>
         {error || 'Weather unavailable'}
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-3 rounded-full border border-primary-foreground/15 bg-primary-foreground/10 px-4 py-2 text-primary-foreground/90">
+    <div className={`flex items-center gap-3 rounded-full border ${pillBorder} ${pillBg} px-4 py-2 ${pillText}`}>
       {getWeatherIcon(weather.icon)}
       <div className="flex items-center gap-3">
         <div className="text-lg font-semibold tabular-nums">{weather.temp}°F</div>
-        <div className="text-xs uppercase tracking-[0.2em] text-primary-foreground/60">
+        <div className={`text-xs uppercase tracking-[0.2em] ${labelMuted}`}>
           {weather.description}
         </div>
       </div>
-      <div className="hidden lg:flex items-center gap-2 text-[11px] text-primary-foreground/60">
+      <div className={`hidden lg:flex items-center gap-2 text-[11px] ${labelMuted}`}>
         <span>Feels {weather.feelsLike}°</span>
         <span aria-hidden="true">•</span>
         <span>Humidity {weather.humidity}%</span>

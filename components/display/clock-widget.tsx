@@ -2,14 +2,19 @@
 
 interface ClockWidgetProps {
   time?: Date | null
+  tone?: 'light' | 'dark'
 }
 
-export function ClockWidget({ time }: ClockWidgetProps) {
+export function ClockWidget({ time, tone = 'light' }: ClockWidgetProps) {
+  const primaryText = tone === 'dark' ? 'text-slate-900' : 'text-primary-foreground'
+  const mutedText = tone === 'dark' ? 'text-slate-500' : 'text-primary-foreground/70'
+  const placeholderText = tone === 'dark' ? 'text-slate-400' : 'text-primary-foreground/40'
+
   if (!time) {
     return (
       <div className="text-right" aria-hidden="true">
-        <p className="text-3xl font-bold tabular-nums text-primary-foreground/40">--:--</p>
-        <p className="text-sm text-primary-foreground/40">--</p>
+        <p className={`text-3xl font-bold tabular-nums ${placeholderText}`}>--:--</p>
+        <p className={`text-sm ${placeholderText}`}>--</p>
       </div>
     )
   }
@@ -30,8 +35,8 @@ export function ClockWidget({ time }: ClockWidgetProps) {
 
   return (
     <div className="text-right">
-      <p className="text-3xl font-bold tabular-nums">{formattedTime}</p>
-      <p className="text-sm text-primary-foreground/70">{formattedDate}</p>
+      <p className={`text-3xl font-bold tabular-nums ${primaryText}`}>{formattedTime}</p>
+      <p className={`text-sm ${mutedText}`}>{formattedDate}</p>
     </div>
   )
 }

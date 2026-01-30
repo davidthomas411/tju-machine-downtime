@@ -8,11 +8,18 @@ import { SiteSwitcher } from '@/components/dashboard/site-switcher'
 import { AdminBootstrap } from '@/components/dashboard/admin-bootstrap'
 import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { StatisticsTab } from '@/components/dashboard/statistics-tab'
+import { NetworkSwitcher } from '@/components/dashboard/network-switcher'
 import type { Machine, MachineStatusRecord, Site } from '@/lib/types'
+import type { NetworkKey } from '@/lib/network'
 
 interface StaffDashboardTabsProps {
   machines: (Machine & { currentStatus: MachineStatusRecord | null })[]
   sites: Site[]
+  allSites: Site[]
+  activeNetwork: NetworkKey
+  networks: NetworkKey[]
+  sitesByNetwork: Record<NetworkKey, Site[]>
+  canSwitchNetworks: boolean
   selectedSiteId?: string | null
   canSwitchSites: boolean
   canEdit: boolean
@@ -23,6 +30,11 @@ interface StaffDashboardTabsProps {
 export function StaffDashboardTabs({
   machines,
   sites,
+  allSites,
+  activeNetwork,
+  networks,
+  sitesByNetwork,
+  canSwitchNetworks,
   selectedSiteId,
   canSwitchSites,
   canEdit,
@@ -37,18 +49,30 @@ export function StaffDashboardTabs({
   const maintenanceCount = machines.filter((m) => m.currentStatus?.status === 'maintenance').length
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div className="p-6 lg:p-8" data-network={activeNetwork}>
+      <div className="flex flex-col gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">LINAC Status Console</h1>
           <p className="text-muted-foreground mt-1">
-            {(sites.find((s) => s.id === selectedSiteId)?.name) || 'All Sites'} · Staff can update machine status in real time
+            {(allSites.find((s) => s.id === selectedSiteId)?.name) || 'All Sites'} · Staff can update machine status in real time
           </p>
         </div>
 
-        {canSwitchSites && (
-          <SiteSwitcher sites={sites} currentSiteId={selectedSiteId || undefined} />
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <NetworkSwitcher
+            activeNetwork={activeNetwork}
+            networks={networks}
+            sitesByNetwork={sitesByNetwork}
+            disabled={!canSwitchNetworks}
+          />
+          {canSwitchSites && (
+            <SiteSwitcher
+              sites={sites}
+              currentSiteId={selectedSiteId || undefined}
+              persistSelection
+            />
+          )}
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

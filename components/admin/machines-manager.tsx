@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -49,16 +49,75 @@ export function MachinesManager({ machines, sites }: MachinesManagerProps) {
   const [isActive, setIsActive] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [formError, setFormError] = useState('')
+  const [query, setQuery] = useState('')
+  const [siteFilter, setSiteFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortKey, setSortKey] = useState('name-asc')
+
+  const filteredMachines = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+    let result = machines.filter((machine) => {
+      if (!normalizedQuery) return true
+      const haystack = [
+        machine.name,
+        machine.model,
+        machine.location,
+        machine.site?.name,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(normalizedQuery)
+    })
+
+    if (siteFilter !== 'all') {
+      result = result.filter((machine) => machine.site_id === siteFilter)
+    }
+
+    if (statusFilter !== 'all') {
+      const isActiveFilter = statusFilter === 'active'
+      result = result.filter((machine) => machine.is_active === isActiveFilter)
+    }
+
+    const sorted = [...result]
+    sorted.sort((a, b) => {
+      switch (sortKey) {
+        case 'name-desc':
+          return a.name.localeCompare(b.name) * -1
+        case 'site':
+          return (a.site?.name || '').localeCompare(b.site?.name || '')
+        case 'order':
+          return (a.display_order || 0) - (b.display_order || 0)
+        case 'name-asc':
+        default:
+          return a.name.localeCompare(b.name)
+      }
+    })
+
+    return sorted
+  }, [machines, query, siteFilter, statusFilter, sortKey])
 
   async function handleSubmit(formData: FormData) {
     setSaving(true)
+    setFormError('')
     formData.set('site_id', selectedSiteId)
     formData.set('is_active', isActive.toString())
     
     if (editingMachine) {
-      await updateMachine(editingMachine.id, formData)
+      const result = await updateMachine(editingMachine.id, formData)
+      if (result?.error) {
+        setFormError(result.error)
+        setSaving(false)
+        return
+      }
     } else {
-      await createMachine(formData)
+      const result = await createMachine(formData)
+      if (result?.error) {
+        setFormError(result.error)
+        setSaving(false)
+        return
+      }
     }
     
     setSaving(false)
@@ -117,6 +176,11 @@ export function MachinesManager({ machines, sites }: MachinesManagerProps) {
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
+                  {formError && (
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                      {formError}
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="site">Site</Label>
                     <Select value={selectedSiteId} onValueChange={setSelectedSiteId}>
@@ -200,6 +264,50 @@ export function MachinesManager({ machines, sites }: MachinesManagerProps) {
         </div>
       </CardHeader>
       <CardContent>
+        {sites.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-3">
+            <Input
+              placeholder="Search machines"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="w-56"
+            />
+            <Select value={siteFilter} onValueChange={setSiteFilter}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="Filter by site" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All sites</SelectItem>
+                {sites.map((site) => (
+                  <SelectItem key={site.id} value={site.id}>
+                    {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortKey} onValueChange={setSortKey}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                <SelectItem value="site">Site</SelectItem>
+                <SelectItem value="order">Display Order</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         {sites.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
             Add a site first before adding machines.
@@ -217,7 +325,7 @@ export function MachinesManager({ machines, sites }: MachinesManagerProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {machines.map((machine) => (
+              {filteredMachines.map((machine) => (
                 <TableRow key={machine.id}>
                   <TableCell className="font-medium">{machine.name}</TableCell>
                   <TableCell className="text-muted-foreground">{machine.model || '-'}</TableCell>
@@ -255,7 +363,7 @@ export function MachinesManager({ machines, sites }: MachinesManagerProps) {
                   </TableCell>
                 </TableRow>
               ))}
-              {machines.length === 0 && (
+              {filteredMachines.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     No machines configured. Add your first LINAC machine to get started.

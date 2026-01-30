@@ -17,7 +17,12 @@ Open `http://localhost:3000` (dashboard) or `http://localhost:3000/display` (lar
 1) Create a Supabase project.
 2) Run the schema SQL in `scripts/001_create_linac_tables.sql`.
 3) Run the analytics SQL in `scripts/002_create_status_history.sql` (for statistics).
-4) Add environment variables:
+4) Run the network SQL in `scripts/003_add_site_network.sql` (for multi-network sites).
+5) Run the notes column SQL in `scripts/004_add_machine_status_notes.sql` (if you see schema cache errors).
+6) Run the machine status audit SQL in `scripts/006_add_machine_status_columns.sql` (if you see missing updated_at/updated_by errors).
+7) Run the machine columns SQL in `scripts/007_add_machine_columns.sql` (if machine edits fail due to missing columns).
+8) Run the machine status unique SQL in `scripts/008_add_machine_status_unique.sql` (if you see ON CONFLICT errors).
+6) Add environment variables:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=...

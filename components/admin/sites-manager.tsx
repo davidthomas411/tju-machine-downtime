@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -35,11 +42,51 @@ export function SitesManager({ sites }: SitesManagerProps) {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSite, setEditingSite] = useState<Site | null>(null)
+  const [selectedNetwork, setSelectedNetwork] = useState('tju')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [networkFilter, setNetworkFilter] = useState('all')
+  const [sortKey, setSortKey] = useState('name-asc')
+
+  const filteredSites = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+    let result = sites.filter((site) => {
+      if (!normalizedQuery) return true
+      const haystack = [site.name, site.code, site.address]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(normalizedQuery)
+    })
+
+    if (networkFilter !== 'all') {
+      result = result.filter((site) => (site.network || 'tju') === networkFilter)
+    }
+
+    const sorted = [...result]
+    sorted.sort((a, b) => {
+      const aCode = a.code || ''
+      const bCode = b.code || ''
+      switch (sortKey) {
+        case 'name-desc':
+          return a.name.localeCompare(b.name) * -1
+        case 'code':
+          return aCode.localeCompare(bCode)
+        case 'network':
+          return (a.network || 'tju').localeCompare(b.network || 'tju')
+        case 'name-asc':
+        default:
+          return a.name.localeCompare(b.name)
+      }
+    })
+
+    return sorted
+  }, [sites, query, networkFilter, sortKey])
 
   async function handleSubmit(formData: FormData) {
     setSaving(true)
+    formData.set('network', selectedNetwork)
     
     if (editingSite) {
       await updateSite(editingSite.id, formData)
@@ -66,11 +113,13 @@ export function SitesManager({ sites }: SitesManagerProps) {
 
   function openEditDialog(site: Site) {
     setEditingSite(site)
+    setSelectedNetwork(site.network || 'tju')
     setDialogOpen(true)
   }
 
   function openNewDialog() {
     setEditingSite(null)
+    setSelectedNetwork('tju')
     setDialogOpen(true)
   }
 
@@ -130,6 +179,19 @@ export function SitesManager({ sites }: SitesManagerProps) {
                       defaultValue={editingSite?.address || ''}
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="network">Network</Label>
+                    <Select value={selectedNetwork} onValueChange={setSelectedNetwork}>
+                      <SelectTrigger id="network">
+                        <SelectValue placeholder="Select network" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tju">Jefferson Health (TJU)</SelectItem>
+                        <SelectItem value="lvhn">Lehigh Valley Health Network</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <DialogFooter>
@@ -147,20 +209,53 @@ export function SitesManager({ sites }: SitesManagerProps) {
         </div>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 flex flex-wrap gap-3">
+          <Input
+            placeholder="Search sites"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="w-56"
+          />
+          <Select value={networkFilter} onValueChange={setNetworkFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Network" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All networks</SelectItem>
+              <SelectItem value="tju">Jefferson Health (TJU)</SelectItem>
+              <SelectItem value="lvhn">Lehigh Valley Health Network</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortKey} onValueChange={setSortKey}>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="Sort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+              <SelectItem value="code">Code</SelectItem>
+              <SelectItem value="network">Network</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Code</TableHead>
+              <TableHead>Network</TableHead>
               <TableHead>Address</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sites.map((site) => (
+            {filteredSites.map((site) => (
               <TableRow key={site.id}>
                 <TableCell className="font-medium">{site.name}</TableCell>
-                <TableCell>{site.code}</TableCell>
+                <TableCell>{site.code || '-'}</TableCell>
+                <TableCell className="text-muted-foreground capitalize">
+                  {site.network || 'tju'}
+                </TableCell>
                 <TableCell className="text-muted-foreground">{site.address || '-'}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
@@ -189,9 +284,9 @@ export function SitesManager({ sites }: SitesManagerProps) {
                 </TableCell>
               </TableRow>
             ))}
-            {sites.length === 0 && (
+            {filteredSites.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                   No sites configured. Add your first site to get started.
                 </TableCell>
               </TableRow>

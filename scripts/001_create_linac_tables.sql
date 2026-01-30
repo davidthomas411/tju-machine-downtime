@@ -4,6 +4,7 @@ create table if not exists public.sites (
   name text not null,
   code text not null,
   address text,
+  network text default 'tju',
   created_at timestamp with time zone default now()
 );
 
@@ -23,7 +24,7 @@ create table if not exists public.machines (
 create table if not exists public.machine_statuses (
   id uuid primary key default gen_random_uuid(),
   machine_id uuid not null unique references public.machines(id) on delete cascade,
-  status text not null default 'on_time', -- on_time, delayed_5min, delayed_10min, delayed_15min, delayed_30min, down_temporary, down_day, maintenance
+  status text not null default 'on_time', -- on_time, delayed_5min, delayed_10min, delayed_15min, delayed_30min, delayed_60min, down_temporary, down_day, maintenance
   notes text,
   updated_by uuid references auth.users(id),
   updated_at timestamp with time zone default now()

@@ -50,6 +50,7 @@ export async function createSite(formData: FormData) {
       name: formData.get('name') as string,
       code: formData.get('code') as string,
       address: formData.get('address') as string || null,
+      network: (formData.get('network') as string) || 'tju',
     })
     .select()
     .single()
@@ -79,6 +80,7 @@ export async function updateSite(siteId: string, formData: FormData) {
       name: formData.get('name') as string,
       code: formData.get('code') as string,
       address: formData.get('address') as string || null,
+      network: (formData.get('network') as string) || 'tju',
     })
     .eq('id', siteId)
 

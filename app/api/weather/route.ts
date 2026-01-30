@@ -1,10 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 
 const DEFAULT_LAT = 39.9526
 const DEFAULT_LON = -75.1652
 const DEFAULT_LOCATION = 'Philadelphia, PA'
+const LVHN_DEFAULT_LAT = 40.6084
+const LVHN_DEFAULT_LON = -75.4902
+const LVHN_DEFAULT_LOCATION = 'Allentown, PA'
 
 type WeatherIcon = 'sunny' | 'partly-cloudy' | 'rainy' | 'snowy'
 
@@ -30,23 +33,44 @@ function mapWeather(code: number): { description: string; icon: WeatherIcon } {
   return { description: 'Mixed', icon: 'partly-cloudy' }
 }
 
-export async function GET() {
-  const latitude = Number(process.env.WEATHER_LAT ?? DEFAULT_LAT)
-  const longitude = Number(process.env.WEATHER_LON ?? DEFAULT_LON)
-  const location = process.env.WEATHER_LOCATION_NAME || DEFAULT_LOCATION
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url)
+  const network = (url.searchParams.get('network') || '').toLowerCase()
+  const latParam = url.searchParams.get('lat')
+  const lonParam = url.searchParams.get('lon')
+  const locationParam = url.searchParams.get('location')
 
-  const url = new URL('https://api.open-meteo.com/v1/forecast')
-  url.searchParams.set('latitude', latitude.toString())
-  url.searchParams.set('longitude', longitude.toString())
-  url.searchParams.set(
+  let latitude = Number(process.env.WEATHER_LAT ?? DEFAULT_LAT)
+  let longitude = Number(process.env.WEATHER_LON ?? DEFAULT_LON)
+  let location = process.env.WEATHER_LOCATION_NAME || DEFAULT_LOCATION
+
+  if (network === 'lvhn') {
+    latitude = Number(process.env.WEATHER_LVHN_LAT ?? LVHN_DEFAULT_LAT)
+    longitude = Number(process.env.WEATHER_LVHN_LON ?? LVHN_DEFAULT_LON)
+    location = process.env.WEATHER_LVHN_LOCATION_NAME || LVHN_DEFAULT_LOCATION
+  }
+
+  if (latParam && lonParam && Number.isFinite(Number(latParam)) && Number.isFinite(Number(lonParam))) {
+    latitude = Number(latParam)
+    longitude = Number(lonParam)
+  }
+
+  if (locationParam) {
+    location = locationParam
+  }
+
+  const apiUrl = new URL('https://api.open-meteo.com/v1/forecast')
+  apiUrl.searchParams.set('latitude', latitude.toString())
+  apiUrl.searchParams.set('longitude', longitude.toString())
+  apiUrl.searchParams.set(
     'current',
     'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m',
   )
-  url.searchParams.set('temperature_unit', 'fahrenheit')
-  url.searchParams.set('wind_speed_unit', 'mph')
-  url.searchParams.set('timezone', 'auto')
+  apiUrl.searchParams.set('temperature_unit', 'fahrenheit')
+  apiUrl.searchParams.set('wind_speed_unit', 'mph')
+  apiUrl.searchParams.set('timezone', 'auto')
 
-  const response = await fetch(url, { next: { revalidate: 900 } })
+  const response = await fetch(apiUrl, { next: { revalidate: 900 } })
   if (!response.ok) {
     return NextResponse.json({ error: 'Weather unavailable' }, { status: 502 })
   }
