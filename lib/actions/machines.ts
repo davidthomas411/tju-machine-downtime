@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createPrivilegedClient } from '@/lib/supabase/privileged'
+import { isAdminBypassEnabled } from '@/lib/auth/admin-bypass'
 import { revalidateTag } from 'next/cache'
 import type { MachineStatus } from '@/lib/types'
 
@@ -41,26 +42,42 @@ export async function updateMachineStatus(
   notes?: string,
 ) {
   const supabase = await createClient()
+  const dataClient = isAdminBypassEnabled() ? await createPrivilegedClient() : supabase
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return { error: 'Not authenticated' }
   }
 
-  const { error } = await supabase
+  const now = new Date().toISOString()
+  const { error } = await dataClient
     .from('machine_statuses')
     .upsert({
       machine_id: machineId,
       status,
       notes: notes || null,
       updated_by: user.id,
-      updated_at: new Date().toISOString(),
+      updated_at: now,
     }, {
       onConflict: 'machine_id',
     })
 
   if (error) {
     return { error: error.message }
+  }
+
+  const { error: historyError } = await dataClient
+    .from('machine_status_history')
+    .insert({
+      machine_id: machineId,
+      status,
+      notes: notes || null,
+      updated_by: user.id,
+      created_at: now,
+    })
+
+  if (historyError) {
+    return { error: historyError.message }
   }
 
   revalidateTag('machines', 'max')

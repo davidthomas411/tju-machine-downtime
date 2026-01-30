@@ -1,11 +1,7 @@
-import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { RealTimeWrapper } from '@/components/dashboard/realtime-wrapper'
-import { SiteSwitcher } from '@/components/dashboard/site-switcher'
-import { AdminBootstrap } from '@/components/dashboard/admin-bootstrap'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { StaffDashboardTabs } from '@/components/dashboard/staff-dashboard-tabs'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { AlertTriangle } from 'lucide-react'
 import { isAdminBypassEnabled } from '@/lib/auth/admin-bypass'
 
 export const dynamic = 'force-dynamic'
@@ -61,106 +57,20 @@ export default async function DashboardPage({
     currentStatus: machine.machine_statuses?.[0] || null,
   })) || []
 
-  const selectedSite = sites?.find((s) => s.id === selectedSiteId)
   const canSwitchSites = !restrictedSiteId && sites.length > 1
   const bootstrapEnabled = Boolean(process.env.ADMIN_BOOTSTRAP_CODE)
 
   return (
     <RealTimeWrapper>
-      <div className="p-6 lg:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">LINAC Status Console</h1>
-            <p className="text-muted-foreground mt-1">
-              {selectedSite?.name || 'All Sites'} · Staff can update machine status in real time
-            </p>
-          </div>
-
-          {canSwitchSites && (
-            <SiteSwitcher sites={sites} currentSiteId={selectedSiteId} />
-          )}
-        </div>
-
-        {!canEdit && (
-          <Alert className="mb-6 border-amber-200 bg-amber-50 text-amber-900">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Viewer access</AlertTitle>
-            <AlertDescription>
-              Your account can view status only. Ask an admin to set your profile role to
-              <span className="font-medium text-amber-950"> staff</span> or
-              <span className="font-medium text-amber-950"> admin</span> in Supabase.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {!canAdmin && (
-          <AdminBootstrap enabled={bootstrapEnabled} />
-        )}
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <StatusSummaryCard
-            label="On Time"
-            count={machinesWithStatus.filter((m) => m.currentStatus?.status === 'on_time' || !m.currentStatus).length}
-            colorClass="bg-status-on-time"
-          />
-          <StatusSummaryCard
-            label="Delayed"
-            count={machinesWithStatus.filter((m) => m.currentStatus?.status?.startsWith('delayed_')).length}
-            colorClass="bg-status-delayed"
-          />
-          <StatusSummaryCard
-            label="Down"
-            count={machinesWithStatus.filter((m) => m.currentStatus?.status?.startsWith('down_')).length}
-            colorClass="bg-status-down"
-          />
-          <StatusSummaryCard
-            label="Maintenance"
-            count={machinesWithStatus.filter((m) => m.currentStatus?.status === 'maintenance').length}
-            colorClass="bg-muted-foreground"
-          />
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {machinesWithStatus.map((machine) => (
-            <MachineStatusCard
-              key={machine.id}
-              machine={machine}
-              canEdit={canEdit}
-            />
-          ))}
-        </div>
-
-        {machinesWithStatus.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No machines found for this site.</p>
-            {canAdmin && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Add machines in the Admin panel.
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+      <StaffDashboardTabs
+        machines={machinesWithStatus}
+        sites={sites || []}
+        selectedSiteId={selectedSiteId}
+        canSwitchSites={canSwitchSites}
+        canEdit={canEdit}
+        canAdmin={canAdmin}
+        bootstrapEnabled={bootstrapEnabled}
+      />
     </RealTimeWrapper>
-  )
-}
-
-function StatusSummaryCard({
-  label,
-  count,
-  colorClass,
-}: {
-  label: string
-  count: number
-  colorClass: string
-}) {
-  return (
-    <div className="bg-card rounded-xl p-4 shadow-sm border border-border">
-      <div className="flex items-center gap-3">
-        <div className={`w-3 h-3 rounded-full ${colorClass}`} />
-        <span className="text-sm text-muted-foreground">{label}</span>
-      </div>
-      <p className="text-3xl font-bold text-foreground mt-2">{count}</p>
-    </div>
   )
 }

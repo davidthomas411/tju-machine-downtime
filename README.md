@@ -16,7 +16,8 @@ Open `http://localhost:3000` (dashboard) or `http://localhost:3000/display` (lar
 
 1) Create a Supabase project.
 2) Run the schema SQL in `scripts/001_create_linac_tables.sql`.
-3) Add environment variables:
+3) Run the analytics SQL in `scripts/002_create_status_history.sql` (for statistics).
+4) Add environment variables:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
