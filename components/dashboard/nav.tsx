@@ -21,20 +21,22 @@ import type { Profile } from '@/lib/types'
 interface NavProps {
   user: User
   profile: Profile | null
+  canAdmin: boolean
 }
 
-export function DashboardNav({ user, profile }: NavProps) {
+export function DashboardNav({ user, profile, canAdmin }: NavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const supabase = createClient()
 
-  const isAdmin = profile?.role === 'admin'
   const displayName = profile?.full_name || toDisplayUsername(user.email) || 'User'
+  const roleLabel = profile?.role || 'viewer'
+  const roleDisplay = canAdmin && roleLabel !== 'admin' ? `${roleLabel} (admin override)` : roleLabel
 
   const navLinks = [
-    { href: '/dashboard', label: 'Dashboard', icon: Activity },
-    ...(isAdmin ? [{ href: '/dashboard/admin', label: 'Admin', icon: Settings }] : []),
+    { href: '/dashboard', label: 'Staff Console', icon: Activity },
+    ...(canAdmin ? [{ href: '/dashboard/admin', label: 'Admin', icon: Settings }] : []),
   ]
 
   async function handleSignOut() {
@@ -50,7 +52,12 @@ export function DashboardNav({ user, profile }: NavProps) {
           <Link href="/dashboard" className="flex items-center gap-3">
             <TJULogoCompact />
             <div className="hidden sm:block">
-              <h1 className="font-bold text-lg leading-tight">LINAC Status</h1>
+              <h1 className="flex items-center gap-2 font-bold text-lg leading-tight">
+                LINAC Status
+                <span className="text-[10px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-primary-foreground/15 text-primary-foreground/80">
+                  Staff Console
+                </span>
+              </h1>
               <p className="text-xs text-primary-foreground/70">Radiation Oncology</p>
             </div>
           </Link>
@@ -104,7 +111,7 @@ export function DashboardNav({ user, profile }: NavProps) {
                 <p className="font-medium">{displayName}</p>
                 <p className="text-muted-foreground text-xs">{user.email}</p>
                 <p className="text-muted-foreground text-xs capitalize mt-1">
-                  Role: {profile?.role || 'viewer'}
+                  Role: {roleDisplay}
                 </p>
               </div>
               <DropdownMenuSeparator />

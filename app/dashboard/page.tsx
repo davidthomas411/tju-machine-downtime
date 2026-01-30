@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AlertTriangle } from 'lucide-react'
+import { isAdminBypassEnabled } from '@/lib/auth/admin-bypass'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +34,10 @@ export default async function DashboardPage({
     .select('*')
     .order('name')
 
-  const restrictedSiteId = profile?.role !== 'admin' ? profile?.site_id : null
+  const allowViewerAdmin = isAdminBypassEnabled()
+  const canAdmin = profile?.role === 'admin' || allowViewerAdmin
+  const canEdit = canAdmin || profile?.role === 'staff'
+  const restrictedSiteId = canAdmin ? null : profile?.site_id
   const selectedSiteId = restrictedSiteId || params.site || sites?.[0]?.id
 
   let machinesQuery = supabase
@@ -57,8 +61,6 @@ export default async function DashboardPage({
     currentStatus: machine.machine_statuses?.[0] || null,
   })) || []
 
-  const canEdit = profile?.role === 'admin' || profile?.role === 'staff'
-  const canAdmin = profile?.role === 'admin'
   const selectedSite = sites?.find((s) => s.id === selectedSiteId)
   const canSwitchSites = !restrictedSiteId && sites.length > 1
   const bootstrapEnabled = Boolean(process.env.ADMIN_BOOTSTRAP_CODE)
@@ -68,9 +70,9 @@ export default async function DashboardPage({
       <div className="p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">LINAC Machine Status</h1>
+            <h1 className="text-3xl font-bold text-foreground">LINAC Status Console</h1>
             <p className="text-muted-foreground mt-1">
-              {selectedSite?.name || 'All Sites'} - Real-time status updates
+              {selectedSite?.name || 'All Sites'} · Staff can update machine status in real time
             </p>
           </div>
 
@@ -131,7 +133,7 @@ export default async function DashboardPage({
         {machinesWithStatus.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No machines found for this site.</p>
-            {profile?.role === 'admin' && (
+            {canAdmin && (
               <p className="text-sm text-muted-foreground mt-2">
                 Add machines in the Admin panel.
               </p>

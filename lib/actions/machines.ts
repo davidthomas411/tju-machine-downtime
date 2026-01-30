@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createPrivilegedClient } from '@/lib/supabase/privileged'
 import { revalidateTag } from 'next/cache'
 import type { MachineStatus } from '@/lib/types'
 
@@ -67,7 +68,7 @@ export async function updateMachineStatus(
 }
 
 export async function createMachine(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { error } = await supabase.from('machines').insert({
     site_id: formData.get('site_id') as string,
@@ -87,7 +88,7 @@ export async function createMachine(formData: FormData) {
 }
 
 export async function updateMachine(machineId: string, formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { error } = await supabase
     .from('machines')
@@ -110,7 +111,7 @@ export async function updateMachine(machineId: string, formData: FormData) {
 }
 
 export async function deleteMachine(machineId: string) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { error } = await supabase
     .from('machines')

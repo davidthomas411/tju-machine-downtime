@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { AdminTabs } from '@/components/admin/admin-tabs'
 import { createClient } from '@/lib/supabase/server'
+import { createPrivilegedClient } from '@/lib/supabase/privileged'
+import { isAdminBypassEnabled } from '@/lib/auth/admin-bypass'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -16,21 +18,24 @@ export default async function AdminPage() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') {
+  const allowViewerAdmin = isAdminBypassEnabled()
+  if (!allowViewerAdmin && profile?.role !== 'admin') {
     redirect('/dashboard')
   }
 
-  const { data: sites } = await supabase
+  const dataClient = allowViewerAdmin ? await createPrivilegedClient() : supabase
+
+  const { data: sites } = await dataClient
     .from('sites')
     .select('*')
     .order('name')
 
-  const { data: machines } = await supabase
+  const { data: machines } = await dataClient
     .from('machines')
     .select('*, site:sites(*)')
     .order('display_order')
 
-  const { data: users } = await supabase
+  const { data: users } = await dataClient
     .from('profiles')
     .select('*, site:sites(*)')
     .order('full_name')

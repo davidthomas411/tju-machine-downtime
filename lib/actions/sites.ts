@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createPrivilegedClient } from '@/lib/supabase/privileged'
 import { revalidateTag } from 'next/cache'
 
 export async function getSites() {
@@ -41,7 +42,7 @@ export async function getSiteWithSettings(siteId: string) {
 }
 
 export async function createSite(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { data: site, error: siteError } = await supabase
     .from('sites')
@@ -70,7 +71,7 @@ export async function createSite(formData: FormData) {
 }
 
 export async function updateSite(siteId: string, formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { error } = await supabase
     .from('sites')
@@ -90,7 +91,7 @@ export async function updateSite(siteId: string, formData: FormData) {
 }
 
 export async function updateSiteSettings(siteId: string, formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { error } = await supabase
     .from('site_settings')
@@ -114,7 +115,7 @@ export async function updateSiteSettings(siteId: string, formData: FormData) {
 }
 
 export async function deleteSite(siteId: string) {
-  const supabase = await createClient()
+  const supabase = await createPrivilegedClient()
 
   const { error } = await supabase
     .from('sites')

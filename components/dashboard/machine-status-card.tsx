@@ -27,6 +27,7 @@ interface MachineStatusCardProps {
   machine: Machine & { currentStatus: MachineStatusRecord | null }
   canEdit?: boolean
   compact?: boolean
+  disableAnimations?: boolean
 }
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -37,7 +38,12 @@ const statusIcons: Record<string, React.ReactNode> = {
   'wrench': <Wrench className="h-6 w-6" />,
 }
 
-export function MachineStatusCard({ machine, canEdit = false, compact = false }: MachineStatusCardProps) {
+export function MachineStatusCard({
+  machine,
+  canEdit = false,
+  compact = false,
+  disableAnimations = false,
+}: MachineStatusCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<MachineStatus>(
     machine.currentStatus?.status || 'on_time'
@@ -45,6 +51,9 @@ export function MachineStatusCard({ machine, canEdit = false, compact = false }:
   const [notes, setNotes] = useState(machine.currentStatus?.notes || '')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+
+  const animationClass = disableAnimations ? '' : 'animate-slide-in'
+  const glowClass = disableAnimations ? '' : 'animate-pulse-glow'
 
   const currentStatus = machine.currentStatus?.status || 'on_time'
   const config = STATUS_CONFIG[currentStatus]
@@ -75,7 +84,7 @@ export function MachineStatusCard({ machine, canEdit = false, compact = false }:
 
   if (compact) {
     return (
-      <div className={`flex items-center justify-between p-4 rounded-xl border-2 ${statusColorClasses[currentStatus]} animate-slide-in`}>
+      <div className={`flex items-center justify-between p-4 rounded-xl border-2 ${statusColorClasses[currentStatus]} ${animationClass}`}>
         <div className="flex items-center gap-3">
           <div className={config.color}>
             {statusIcons[config.icon]}
@@ -93,7 +102,7 @@ export function MachineStatusCard({ machine, canEdit = false, compact = false }:
   }
 
   return (
-    <Card className={`border-2 ${statusColorClasses[currentStatus]} transition-all duration-300 hover:shadow-lg animate-slide-in`}>
+    <Card className={`border-2 ${statusColorClasses[currentStatus]} transition-all duration-300 hover:shadow-lg ${animationClass}`}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <div>
@@ -165,7 +174,7 @@ export function MachineStatusCard({ machine, canEdit = false, compact = false }:
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-full ${config.bgColor} text-card animate-pulse-glow`} style={{ color: 'inherit' }}>
+          <div className={`p-3 rounded-full ${config.bgColor} text-card ${glowClass}`} style={{ color: 'inherit' }}>
             <span className="text-card">{statusIcons[config.icon]}</span>
           </div>
           <div className="flex-1">

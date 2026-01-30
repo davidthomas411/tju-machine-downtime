@@ -8,8 +8,8 @@ const sourceSans = Source_Sans_3({ subsets: ['latin'], variable: '--font-body' }
 const libreBaskerville = Libre_Baskerville({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-display' })
 
 export const metadata: Metadata = {
-  title: 'TJU Radiation Oncology - LINAC Status Dashboard',
-  description: 'Thomas Jefferson University Department of Radiation Oncology LINAC Machine Status Dashboard',
+  title: 'TJU Radiation Oncology - LINAC Status Console',
+  description: 'Thomas Jefferson University Department of Radiation Oncology LINAC Machine Status Console',
   generator: 'v0.app',
   icons: {
     icon: [

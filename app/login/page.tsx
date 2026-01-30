@@ -52,8 +52,8 @@ export default function LoginPage() {
 
         <Card className="border-primary/20 shadow-xl">
           <CardHeader className="text-center space-y-1">
-            <CardTitle className="text-2xl font-bold text-primary">LINAC Status Dashboard</CardTitle>
-            <CardDescription>Sign in to manage machine status</CardDescription>
+            <CardTitle className="text-2xl font-bold text-primary">LINAC Status Console</CardTitle>
+            <CardDescription>Staff sign in to update machine status</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
