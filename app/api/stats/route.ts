@@ -13,6 +13,20 @@ type StatsRow = {
   } | null
 }
 
+const delayTypes = [
+  'delayed_5min',
+  'delayed_10min',
+  'delayed_15min',
+  'delayed_30min',
+  'delayed_60min',
+] as const
+
+type DelayType = typeof delayTypes[number]
+
+function isDelayType(status: string): status is DelayType {
+  return delayTypes.includes(status as DelayType)
+}
+
 function toISO(date: Date) {
   return date.toISOString()
 }
@@ -61,6 +75,7 @@ export async function GET(request: NextRequest) {
   const rows = (data || []) as StatsRow[]
 
   const delaysByMachine = new Map<string, { machineId: string; machineName: string; count: number }>()
+  const delayTypesByMachine = new Map<string, { machineId: string; machineName: string } & Record<DelayType, number>>()
   const downByMachine = new Map<string, { machineId: string; machineName: string; count: number }>()
   const downReasons = new Map<string, number>()
 
@@ -74,6 +89,24 @@ export async function GET(request: NextRequest) {
       }
       current.count += 1
       delaysByMachine.set(row.machine_id, current)
+
+      if (isDelayType(row.status)) {
+        const existing = delayTypesByMachine.get(row.machine_id)
+        if (existing) {
+          existing[row.status] += 1
+        } else {
+          const baseline = delayTypes.reduce((acc, type) => {
+            acc[type] = 0
+            return acc
+          }, {} as Record<DelayType, number>)
+          baseline[row.status] = 1
+          delayTypesByMachine.set(row.machine_id, {
+            machineId: row.machine_id,
+            machineName,
+            ...baseline,
+          })
+        }
+      }
     }
 
     if (row.status.startsWith('down_')) {
@@ -96,6 +129,11 @@ export async function GET(request: NextRequest) {
     rangeEnd: toISO(now),
     totalEvents: rows.length,
     delaysByMachine: Array.from(delaysByMachine.values()).sort((a, b) => b.count - a.count),
+    delayTypesByMachine: Array.from(delayTypesByMachine.values()).sort((a, b) => {
+      const totalA = delayTypes.reduce((sum, key) => sum + (a[key] || 0), 0)
+      const totalB = delayTypes.reduce((sum, key) => sum + (b[key] || 0), 0)
+      return totalB - totalA
+    }),
     downByMachine: Array.from(downByMachine.values()).sort((a, b) => b.count - a.count),
     downReasons: Array.from(downReasons.entries())
       .map(([reason, count]) => ({ reason, count }))

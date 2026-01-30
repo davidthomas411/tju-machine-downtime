@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +19,15 @@ interface StatsResponse {
   rangeEnd: string
   totalEvents: number
   delaysByMachine: { machineId: string; machineName: string; count: number }[]
+  delayTypesByMachine: ( {
+    machineId: string
+    machineName: string
+    delayed_5min: number
+    delayed_10min: number
+    delayed_15min: number
+    delayed_30min: number
+    delayed_60min: number
+  } )[]
   downByMachine: { machineId: string; machineName: string; count: number }[]
   downReasons: { reason: string; count: number }[]
 }
@@ -35,7 +44,15 @@ const ranges = [
   { label: 'All', value: 'all' },
 ]
 
-const reasonColors = ['#0F4C81', '#1B6C8E', '#2F8F8B', '#5A9B7C', '#8AA574', '#B4AD6A']
+const reasonOpacities = [1, 0.85, 0.7, 0.55, 0.4, 0.3]
+const delayedOpacities = [1, 0.85, 0.7, 0.55, 0.4]
+const delayTypeConfig = [
+  { key: 'delayed_10min', label: '10m', opacity: delayedOpacities[0] },
+  { key: 'delayed_15min', label: '15m', opacity: delayedOpacities[1] },
+  { key: 'delayed_30min', label: '30m', opacity: delayedOpacities[2] },
+  { key: 'delayed_60min', label: '1h', opacity: delayedOpacities[3] },
+  { key: 'delayed_5min', label: '5m', opacity: delayedOpacities[4] },
+]
 
 export function StatisticsTab({ siteId, machines }: StatisticsTabProps) {
   const [range, setRange] = useState('30')
@@ -178,7 +195,43 @@ export function StatisticsTab({ siteId, machines }: StatisticsTabProps) {
                     <XAxis dataKey="machineName" tick={{ fontSize: 12 }} />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#1B6C8E" radius={[6, 6, 0, 0]} />
+                    <Legend />
+                    <Bar dataKey="count" name="Delayed" fill="var(--status-delayed)" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Delay Lengths by Machine</CardTitle>
+              <CardDescription>Breakdown of delay durations for each machine.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[280px]">
+              {stats.delayTypesByMachine.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-muted-foreground">
+                  No delay duration data captured.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.delayTypesByMachine} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="machineName" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    {delayTypeConfig.map((config) => (
+                      <Bar
+                        key={config.key}
+                        dataKey={config.key}
+                        stackId="delay"
+                        name={config.label}
+                        fill="var(--status-delayed)"
+                        fillOpacity={config.opacity}
+                        radius={[6, 6, 0, 0]}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -202,7 +255,8 @@ export function StatisticsTab({ siteId, machines }: StatisticsTabProps) {
                     <XAxis dataKey="machineName" tick={{ fontSize: 12 }} />
                     <YAxis allowDecimals={false} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#0F4C81" radius={[6, 6, 0, 0]} />
+                    <Legend />
+                    <Bar dataKey="count" name="Down" fill="var(--status-down)" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -233,10 +287,12 @@ export function StatisticsTab({ siteId, machines }: StatisticsTabProps) {
                       {stats.downReasons.map((entry, index) => (
                         <Cell
                           key={`cell-${entry.reason}`}
-                          fill={reasonColors[index % reasonColors.length]}
+                          fill="var(--status-down)"
+                          fillOpacity={reasonOpacities[index % reasonOpacities.length]}
                         />
                       ))}
                     </Pie>
+                    <Legend />
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
