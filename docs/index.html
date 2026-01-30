@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LINAC Status Dashboard — Usage & Customization Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #10162a;
+        --ink-muted: #3f4c67;
+        --paper: #ffffff;
+        --surface: #f4f6fb;
+        --accent: #1e2655;
+        --accent-soft: #e7ebf6;
+        --border: #d6dbe8;
+        --rule: #c8cfe0;
+        --shadow: 0 20px 50px rgba(16, 22, 42, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Source Sans 3', system-ui, sans-serif;
+        color: var(--ink);
+        background: var(--surface);
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: -999px;
+        top: 0;
+        background: #000;
+        color: #fff;
+        padding: 8px 12px;
+        z-index: 10;
+      }
+
+      .skip-link:focus {
+        left: 16px;
+        top: 16px;
+      }
+
+      header {
+        padding: 48px 8vw 24px;
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 8vw 80px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: 'Source Serif 4', serif;
+        margin: 0 0 12px;
+        font-weight: 700;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 3vw, 3rem);
+      }
+
+      h2 {
+        font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+        margin-top: 32px;
+      }
+
+      h3 {
+        font-size: 1.15rem;
+      }
+
+      p {
+        line-height: 1.65;
+        color: var(--ink-muted);
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        font-size: 0.95rem;
+        color: var(--ink-muted);
+      }
+
+      .meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 28px;
+        align-items: start;
+      }
+
+      .hero-card {
+        background: var(--paper);
+        border-radius: 20px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow);
+      }
+
+      .hero img {
+        width: 100%;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 18px 40px rgba(16, 22, 42, 0.16);
+      }
+
+      .toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 18px 0 0;
+      }
+
+      .toc a {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--paper);
+        font-size: 0.9rem;
+      }
+
+      .section {
+        background: var(--paper);
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        padding: 22px 24px;
+        margin-top: 24px;
+      }
+
+      .section + .section {
+        margin-top: 20px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px;
+        background: #fbfcff;
+      }
+
+      .rule {
+        border-bottom: 1px solid var(--rule);
+        margin: 24px 0 0;
+      }
+
+      ul,
+      ol {
+        padding-left: 20px;
+        color: var(--ink-muted);
+        line-height: 1.7;
+      }
+
+      code,
+      pre {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.9rem;
+      }
+
+      pre {
+        background: #0c1226;
+        color: #e8ecff;
+        padding: 16px;
+        border-radius: 12px;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        color: var(--ink-muted);
+      }
+
+      th {
+        color: var(--ink);
+        background: #f4f6fb;
+      }
+
+      footer {
+        margin-top: 48px;
+        color: var(--ink-muted);
+        font-size: 0.9rem;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="wrap">
+      <span class="tag">Usage & Deployment Guide</span>
+      <h1>LINAC Status Dashboard</h1>
+      <p>
+        A clinical operations dashboard for radiation oncology units. This document provides
+        step-by-step usage instructions for staff and administrators, followed by a customization
+        guide for deploying new instances with Supabase.
+      </p>
+      <div class="meta">
+        <span><strong>Institution:</strong> Thomas Jefferson University Hospital</span>
+        <span><strong>Version:</strong> January 30, 2026</span>
+        <span><strong>Format:</strong> Operational instructions</span>
+        <span><strong>Source:</strong> <a href="https://github.com/davidthomas411/tju-machine-downtime">GitHub Repository</a></span>
+      </div>
+      <div class="toc">
+        <a href="#instructions">Instructions</a>
+        <a href="#staff">Staff Console</a>
+        <a href="#display">Display Wallboard</a>
+        <a href="#admin">Admin Panel</a>
+        <a href="#customize">Customization</a>
+      </div>
+    </header>
+
+    <main id="content" class="wrap">
+      <section class="hero">
+        <div class="hero-card">
+          <h2 id="instructions">1. Instructions (Quick Use)</h2>
+          <p class="badge">Primary workflow</p>
+          <ol>
+            <li>Open the Staff Console at <code>/dashboard</code> and sign in.</li>
+            <li>Select the hospital (TJU or LVH) and the site if prompted.</li>
+            <li>Click the edit icon on a machine card to update status.</li>
+            <li>Record notes for delays or downtime as needed.</li>
+            <li>Review analytics in the Statistics tab.</li>
+            <li>Open the Display Wallboard (<code>/display</code>) for waiting rooms.</li>
+          </ol>
+          <div class="rule"></div>
+          <p>
+            Display mode refreshes every 5 seconds and also listens to Supabase Realtime for
+            immediate updates when enabled.
+          </p>
+        </div>
+        <div>
+          <img src="assets/dashboard.png" alt="Staff console dashboard" />
+        </div>
+      </section>
+
+      <section class="section" id="staff">
+        <h2>2. Staff Console</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Status Updates</h3>
+            <p>Use the edit icon on any machine card to set delays, downtime, or maintenance.</p>
+          </div>
+          <div class="card">
+            <h3>Notes</h3>
+            <p>Attach contextual notes to delays or outages for later reporting.</p>
+          </div>
+          <div class="card">
+            <h3>Statistics</h3>
+            <p>View breakdowns of delay lengths, downtime frequency, and reason summaries.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="display">
+        <h2>3. Display Wallboard</h2>
+        <p>
+          The display page is designed for waiting rooms and shared spaces. It is read-only and
+          optimized for large screens.
+        </p>
+        <ul>
+          <li>Open <code>/display</code> in a browser and use the Full Screen button.</li>
+          <li>Use the TJU/LVH toggle to switch networks.</li>
+          <li>Weather defaults to Philadelphia for TJU and Allentown for LVH.</li>
+        </ul>
+      </section>
+
+      <section class="section" id="admin">
+        <h2>4. Admin Panel</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Sites</h3>
+            <p>Create hospital sites and assign each to a network (TJU or LVH).</p>
+          </div>
+          <div class="card">
+            <h3>Machines</h3>
+            <p>Add machines, set display order, and mark active vs inactive.</p>
+          </div>
+          <div class="card">
+            <h3>Users</h3>
+            <p>Assign roles and default sites to control what users see first.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="customize">
+        <h2>5. Customization & New Supabase Setup</h2>
+        <p class="badge">Deployment checklist</p>
+        <ol>
+          <li>Create a new Supabase project.</li>
+          <li>Run the schema scripts in order (see below).</li>
+          <li>Set environment variables in your hosting platform.</li>
+          <li>Upload hospital logos to <code>public/brand</code>.</li>
+          <li>Adjust theme colors in <code>app/globals.css</code>.</li>
+          <li>Enable Realtime on <code>machines</code> and <code>machine_statuses</code>.</li>
+        </ol>
+
+        <h3>SQL Initialization</h3>
+        <pre><code>scripts/001_create_linac_tables.sql
+scripts/002_create_status_history.sql
+scripts/003_add_site_network.sql
+scripts/004_add_machine_status_notes.sql
+scripts/006_add_machine_status_columns.sql
+scripts/007_add_machine_columns.sql
+scripts/008_add_machine_status_unique.sql</code></pre>
+
+        <h3>Environment Variables</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>NEXT_PUBLIC_SUPABASE_URL</td>
+              <td>Supabase project URL.</td>
+            </tr>
+            <tr>
+              <td>NEXT_PUBLIC_SUPABASE_ANON_KEY</td>
+              <td>Supabase anon key.</td>
+            </tr>
+            <tr>
+              <td>SUPABASE_SERVICE_ROLE_KEY</td>
+              <td>Server access for admin workflows and analytics.</td>
+            </tr>
+            <tr>
+              <td>WEATHER_LAT / WEATHER_LON / WEATHER_LOCATION_NAME</td>
+              <td>TJU weather location.</td>
+            </tr>
+            <tr>
+              <td>WEATHER_LVHN_LAT / WEATHER_LVHN_LON / WEATHER_LVHN_LOCATION_NAME</td>
+              <td>LVH weather location override.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <footer>
+        <p>
+          Academic-style deployment notes for clinical operations teams. For source details,
+          consult the repository README.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
