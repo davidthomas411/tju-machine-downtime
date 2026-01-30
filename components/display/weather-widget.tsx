@@ -10,40 +10,47 @@ interface WeatherData {
   windSpeed: number
   description: string
   icon: string
+  location?: string
 }
 
 export function WeatherWidget() {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    // Simulate weather data for Philadelphia
-    // In production, you would fetch from a weather API
-    const mockWeather: WeatherData = {
-      temp: 45,
-      feelsLike: 42,
-      humidity: 65,
-      windSpeed: 12,
-      description: 'Partly Cloudy',
-      icon: 'partly-cloudy',
-    }
-    
-    setTimeout(() => {
-      setWeather(mockWeather)
-      setLoading(false)
-    }, 500)
+    let mounted = true
 
-    // Refresh weather every 30 minutes
+    async function fetchWeather() {
+      try {
+        const response = await fetch('/api/weather', { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error('Weather unavailable')
+        }
+        const data = await response.json()
+        if (mounted) {
+          setWeather(data)
+          setError('')
+          setLoading(false)
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Weather unavailable')
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchWeather()
+
     const interval = setInterval(() => {
-      // Simulate small variations
-      setWeather(prev => prev ? {
-        ...prev,
-        temp: prev.temp + Math.floor(Math.random() * 3) - 1,
-        humidity: Math.min(100, Math.max(0, prev.humidity + Math.floor(Math.random() * 5) - 2)),
-      } : null)
+      fetchWeather()
     }, 1800000)
 
-    return () => clearInterval(interval)
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
   }, [])
 
   const getWeatherIcon = (icon: string) => {
@@ -67,17 +74,19 @@ export function WeatherWidget() {
     )
   }
 
-  if (!weather) {
+  if (error || !weather) {
     return (
       <div className="h-full flex items-center justify-center p-8">
-        <p className="text-muted-foreground">Weather unavailable</p>
+        <p className="text-muted-foreground">{error || 'Weather unavailable'}</p>
       </div>
     )
   }
 
   return (
     <div className="h-full p-6">
-      <h3 className="text-lg font-semibold text-muted-foreground mb-4">Philadelphia Weather</h3>
+      <h3 className="text-lg font-semibold text-muted-foreground mb-4">
+        {weather.location || 'Local Weather'}
+      </h3>
       
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">

@@ -1,8 +1,11 @@
 import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { RealTimeWrapper } from '@/components/dashboard/realtime-wrapper'
 import { SiteSwitcher } from '@/components/dashboard/site-switcher'
+import { AdminBootstrap } from '@/components/dashboard/admin-bootstrap'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { AlertTriangle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,8 +58,10 @@ export default async function DashboardPage({
   })) || []
 
   const canEdit = profile?.role === 'admin' || profile?.role === 'staff'
+  const canAdmin = profile?.role === 'admin'
   const selectedSite = sites?.find((s) => s.id === selectedSiteId)
   const canSwitchSites = !restrictedSiteId && sites.length > 1
+  const bootstrapEnabled = Boolean(process.env.ADMIN_BOOTSTRAP_CODE)
 
   return (
     <RealTimeWrapper>
@@ -73,6 +78,22 @@ export default async function DashboardPage({
             <SiteSwitcher sites={sites} currentSiteId={selectedSiteId} />
           )}
         </div>
+
+        {!canEdit && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50 text-amber-900">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Viewer access</AlertTitle>
+            <AlertDescription>
+              Your account can view status only. Ask an admin to set your profile role to
+              <span className="font-medium text-amber-950"> staff</span> or
+              <span className="font-medium text-amber-950"> admin</span> in Supabase.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!canAdmin && (
+          <AdminBootstrap enabled={bootstrapEnabled} />
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <StatusSummaryCard

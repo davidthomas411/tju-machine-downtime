@@ -9,7 +9,9 @@ import { WeatherWidget } from '@/components/display/weather-widget'
 import { ClockWidget } from '@/components/display/clock-widget'
 import { WebcamWidget } from '@/components/display/webcam-widget'
 import { AnnouncementWidget } from '@/components/display/announcement-widget'
+import { Button } from '@/components/ui/button'
 import type { Machine, MachineStatusRecord, Site } from '@/lib/types'
+import { ArrowLeft } from 'lucide-react'
 
 interface DisplayDashboardProps {
   machines: (Machine & { currentStatus: MachineStatusRecord | null })[]
@@ -88,11 +90,21 @@ export function DisplayDashboard({ machines, site, sites }: DisplayDashboardProp
         <header className="bg-primary text-primary-foreground px-8 py-4">
           <div className="flex items-center justify-between">
             <TJULogo size="lg" className="[&_span]:text-primary-foreground [&_span]:opacity-90" />
-            <div className="text-right">
-              <ClockWidget time={currentTime} />
-              {site && (
-                <p className="text-sm text-primary-foreground/70 mt-1">{site.name}</p>
-              )}
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <ClockWidget time={currentTime} />
+                {site && (
+                  <p className="text-sm text-primary-foreground/70 mt-1">{site.name}</p>
+                )}
+              </div>
+              <Button
+                variant="secondary"
+                className="border border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => router.push('/dashboard')}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Dashboard
+              </Button>
             </div>
           </div>
         </header>

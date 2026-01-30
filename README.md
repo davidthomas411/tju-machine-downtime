@@ -21,6 +21,8 @@ Open `http://localhost:3000` (dashboard) or `http://localhost:3000/display` (lar
 ```
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+ADMIN_BOOTSTRAP_CODE=...
 ```
 
 Create an admin user in Supabase Auth (email + password), then set their role:
@@ -28,7 +30,22 @@ Create an admin user in Supabase Auth (email + password), then set their role:
 ```sql
 update public.profiles
 set role = 'admin'
-where email = 'admin@jefferson.edu';
+where email = 'admin@tju.local';
+```
+
+### Admin bootstrap (in-app)
+If you prefer not to use SQL, set `SUPABASE_SERVICE_ROLE_KEY` and `ADMIN_BOOTSTRAP_CODE`.
+Log in, then use the **Admin setup** card on the dashboard to claim admin access.
+This only works when no admins exist yet.
+
+### Username-only login (no emails)
+The login screen accepts a **username** and appends `@tju.local` automatically.
+Create users in Supabase with emails like `admin@tju.local` and password `admin`.
+New signups default to the `staff` role so they can update machine status; change to `viewer` for read-only.
+You can override the domain with:
+
+```
+NEXT_PUBLIC_AUTH_DOMAIN=tju.local
 ```
 
 Optionally assign them to the default site:
@@ -36,14 +53,24 @@ Optionally assign them to the default site:
 ```sql
 update public.profiles
 set site_id = '00000000-0000-0000-0000-000000000001'
-where email = 'admin@jefferson.edu';
+where email = 'admin@tju.local';
 ```
 
 ## Display mode
 
 Use `/display` for the wallboard view. It rotates widgets and refreshes via Supabase Realtime.
 
+## Weather (Open-Meteo)
+
+The display pulls live weather from Open-Meteo (no API key required). Configure:
+
+```
+WEATHER_LAT=39.9526
+WEATHER_LON=-75.1652
+WEATHER_LOCATION_NAME=Philadelphia, PA
+```
+
 ## Next steps
 
-- Add real weather + webcam feeds
+- Add live webcam feeds
 - Add announcements editor and site settings UI

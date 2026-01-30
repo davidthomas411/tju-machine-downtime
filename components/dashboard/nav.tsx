@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import { toDisplayUsername } from '@/lib/auth/username'
 import { TJULogoCompact } from '@/components/tju-logo'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +30,7 @@ export function DashboardNav({ user, profile }: NavProps) {
   const supabase = createClient()
 
   const isAdmin = profile?.role === 'admin'
+  const displayName = profile?.full_name || toDisplayUsername(user.email) || 'User'
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard', icon: Activity },
@@ -94,13 +96,13 @@ export function DashboardNav({ user, profile }: NavProps) {
                 <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center text-accent-foreground">
                   <UserIcon className="h-4 w-4" />
                 </div>
-                <span className="hidden lg:block">{profile?.full_name || user.email}</span>
+                <span className="hidden lg:block">{displayName}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5 text-sm">
-                <p className="font-medium">{profile?.full_name || 'User'}</p>
-                <p className="text-muted-foreground text-xs">{profile?.email || user.email}</p>
+                <p className="font-medium">{displayName}</p>
+                <p className="text-muted-foreground text-xs">{user.email}</p>
                 <p className="text-muted-foreground text-xs capitalize mt-1">
                   Role: {profile?.role || 'viewer'}
                 </p>

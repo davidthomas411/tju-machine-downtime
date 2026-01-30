@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { Site, Profile } from '@/lib/types'
+import { toDisplayUsername } from '@/lib/auth/username'
 
 interface UsersManagerProps {
   users: (Profile & { site: Site | null })[]
@@ -46,8 +47,12 @@ export function UsersManager({ users }: UsersManagerProps) {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.full_name || 'Unknown'}</TableCell>
-                <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                <TableCell className="font-medium">
+                  {user.full_name || toDisplayUsername(user.email) || 'Unknown'}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {toDisplayUsername(user.email) || user.email}
+                </TableCell>
                 <TableCell>
                   <Badge variant={roleBadgeVariants[user.role] || 'outline'} className="capitalize">
                     {user.role}

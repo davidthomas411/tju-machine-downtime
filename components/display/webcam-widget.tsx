@@ -1,21 +1,25 @@
 'use client'
 
 import { useState } from 'react'
-import { Camera, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Camera, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const webcams = [
   {
     id: 1,
-    name: 'Philadelphia Skyline',
-    location: 'Center City',
-    imageUrl: 'https://images.unsplash.com/photo-1601581875039-e899893d520c?w=800&h=450&fit=crop',
+    name: 'Independence Mall Live',
+    location: 'Fox 29',
+    imageUrl: '/brand/maps.jpg',
+    externalUrl: 'https://www.fox29.com/independence-mall-panoramic-webcam',
+    actionLabel: 'Open Live Webcam',
   },
   {
     id: 2,
-    name: 'Ben Franklin Bridge',
-    location: 'Delaware River',
-    imageUrl: 'https://images.unsplash.com/photo-1569761316261-9a8696fa2ca3?w=800&h=450&fit=crop',
+    name: 'Philadelphia Live',
+    location: 'Fox 29',
+    imageUrl: '/brand/maps.jpg',
+    externalUrl: 'https://www.fox29.com/philadelphia-webcam',
+    actionLabel: 'Open Live Webcam',
   },
   {
     id: 3,
@@ -59,6 +63,21 @@ export function WebcamWidget() {
           <p className="font-semibold text-lg">{currentWebcam.name}</p>
           <p className="text-sm text-card/80">{currentWebcam.location}</p>
         </div>
+
+        {currentWebcam.externalUrl && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Button
+              asChild
+              variant="secondary"
+              className="bg-black/60 text-card hover:bg-black/70"
+            >
+              <a href={currentWebcam.externalUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                {currentWebcam.actionLabel || 'Open Live View'}
+              </a>
+            </Button>
+          </div>
+        )}
 
         <div className="absolute inset-y-0 left-0 flex items-center">
           <Button

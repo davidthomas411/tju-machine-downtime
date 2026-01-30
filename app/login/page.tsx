@@ -5,6 +5,7 @@ import React from 'react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { toLoginEmail } from '@/lib/auth/username'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,7 +14,7 @@ import { TJULogo } from '@/components/tju-logo'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -24,6 +25,8 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+
+    const email = toLoginEmail(username)
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -62,13 +65,13 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@jefferson.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="bg-background"
                 />

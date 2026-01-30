@@ -44,13 +44,20 @@ export function MachineStatusCard({ machine, canEdit = false, compact = false }:
   )
   const [notes, setNotes] = useState(machine.currentStatus?.notes || '')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const currentStatus = machine.currentStatus?.status || 'on_time'
   const config = STATUS_CONFIG[currentStatus]
 
   async function handleSave() {
     setSaving(true)
-    await updateMachineStatus(machine.id, selectedStatus, notes)
+    setSaveError('')
+    const result = await updateMachineStatus(machine.id, selectedStatus, notes)
+    if (result?.error) {
+      setSaveError(result.error)
+      setSaving(false)
+      return
+    }
     setSaving(false)
     setDialogOpen(false)
   }
@@ -111,6 +118,12 @@ export function MachineStatusCard({ machine, canEdit = false, compact = false }:
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
+                  {saveError && (
+                    <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      {saveError}
+                    </div>
+                  )}
                   <RadioGroup value={selectedStatus} onValueChange={(v) => setSelectedStatus(v as MachineStatus)}>
                     <div className="grid gap-2">
                       {(Object.entries(STATUS_CONFIG) as [MachineStatus, typeof config][]).map(([status, cfg]) => (

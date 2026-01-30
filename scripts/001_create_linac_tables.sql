@@ -34,7 +34,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text,
   full_name text,
-  role text default 'viewer', -- admin, staff, viewer
+  role text default 'staff', -- admin, staff, viewer
   site_id uuid references public.sites(id),
   created_at timestamp with time zone default now()
 );
@@ -109,7 +109,21 @@ create policy "Users can view own profile" on public.profiles for select using (
 create policy "Admins can view all profiles" on public.profiles for select using (
   exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
 );
-create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
+drop policy if exists "Users can update own profile" on public.profiles;
+drop policy if exists "Admins can update all profiles" on public.profiles;
+create policy "Users can update own profile" on public.profiles
+  for update
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and role = (select role from public.profiles where id = auth.uid())
+  );
+create policy "Admins can update all profiles" on public.profiles
+  for update
+  using (
+    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  )
+  with check (true);
 create policy "Allow insert for authenticated users" on public.profiles for insert with check (auth.uid() = id);
 
 -- RLS Policies for widgets
@@ -136,8 +150,8 @@ begin
   values (
     new.id,
     new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.email),
-    coalesce(new.raw_user_meta_data ->> 'role', 'viewer')
+    coalesce(new.raw_user_meta_data ->> 'full_name', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data ->> 'role', 'staff')
   )
   on conflict (id) do nothing;
   return new;
