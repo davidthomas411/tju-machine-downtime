@@ -17,18 +17,23 @@ interface SiteSwitcherProps {
   sites: Site[]
   currentSiteId?: string
   persistSelection?: boolean
+  onChange?: (siteId: string) => void
 }
 
-export function SiteSwitcher({ sites, currentSiteId, persistSelection = false }: SiteSwitcherProps) {
+export function SiteSwitcher({ sites, currentSiteId, persistSelection = false, onChange }: SiteSwitcherProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
   function handleSiteChange(siteId: string) {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('site', siteId)
-    router.push(`${pathname}?${params.toString()}`)
+    onChange?.(siteId)
+
+    if (!onChange) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.set('site', siteId)
+      router.push(`${pathname}?${params.toString()}`)
+    }
 
     if (persistSelection) {
       startTransition(async () => {

@@ -63,21 +63,16 @@ export default async function DashboardPage({
     || (profile?.site_id && filteredSites.some((site) => site.id === profile.site_id) ? profile.site_id : undefined)
     || filteredSites[0]?.id
 
-  let machines: (Machine & { machine_statuses?: unknown[] })[] = []
-
-  if (selectedSiteId) {
-    const { data } = await supabase
-      .from('machines')
-      .select(`
-        *,
-        site:sites(*),
-        machine_statuses(*)
-      `)
-      .eq('is_active', true)
-      .eq('site_id', selectedSiteId)
-      .order('display_order')
-    machines = (data as typeof machines) || []
-  }
+  const { data: machinesData } = await supabase
+    .from('machines')
+    .select(`
+      *,
+      site:sites(*),
+      machine_statuses(*)
+    `)
+    .eq('is_active', true)
+    .order('display_order')
+  const machines = (machinesData as (Machine & { machine_statuses?: unknown[] })[]) || []
 
   const machinesWithStatus = machines?.map((machine) => {
     const rawStatuses = machine.machine_statuses
@@ -100,7 +95,6 @@ export default async function DashboardPage({
     }
   }) || []
 
-  const canSwitchSites = filteredSites.length > 1
   const canSwitchNetworks = networks.length > 1
   const bootstrapEnabled = Boolean(process.env.ADMIN_BOOTSTRAP_CODE)
 
@@ -108,14 +102,12 @@ export default async function DashboardPage({
     <RealTimeWrapper>
       <StaffDashboardTabs
         machines={machinesWithStatus}
-        sites={filteredSites}
         allSites={allSites}
         activeNetwork={activeNetwork}
         networks={networks}
         sitesByNetwork={sitesByNetwork}
         canSwitchNetworks={canSwitchNetworks}
         selectedSiteId={selectedSiteId}
-        canSwitchSites={canSwitchSites}
         canEdit={canEdit}
         canAdmin={canAdmin}
         bootstrapEnabled={bootstrapEnabled}

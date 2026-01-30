@@ -12,6 +12,8 @@ interface NetworkSwitcherProps {
   networks: NetworkKey[]
   sitesByNetwork: Record<NetworkKey, Site[]>
   disabled?: boolean
+  enableRouting?: boolean
+  onChange?: (network: NetworkKey) => void
 }
 
 export function NetworkSwitcher({
@@ -19,6 +21,8 @@ export function NetworkSwitcher({
   networks,
   sitesByNetwork,
   disabled = false,
+  enableRouting = true,
+  onChange,
 }: NetworkSwitcherProps) {
   if (networks.length === 0) {
     return null
@@ -44,8 +48,11 @@ export function NetworkSwitcher({
     }
 
     document.cookie = `${NETWORK_COOKIE_NAME}=${nextNetwork}; path=/; max-age=31536000`
-    router.push(`${pathname}?${params.toString()}`)
-    router.refresh()
+    onChange?.(nextNetwork)
+    if (enableRouting) {
+      router.push(`${pathname}?${params.toString()}`)
+      router.refresh()
+    }
   }
 
   return (

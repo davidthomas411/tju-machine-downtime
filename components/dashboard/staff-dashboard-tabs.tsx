@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Activity, BarChart3 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -10,18 +10,16 @@ import { MachineStatusCard } from '@/components/dashboard/machine-status-card'
 import { StatisticsTab } from '@/components/dashboard/statistics-tab'
 import { NetworkSwitcher } from '@/components/dashboard/network-switcher'
 import type { Machine, MachineStatusRecord, Site } from '@/lib/types'
-import type { NetworkKey } from '@/lib/network'
+import { NETWORK_COOKIE_NAME, type NetworkKey } from '@/lib/network'
 
 interface StaffDashboardTabsProps {
   machines: (Machine & { currentStatus: MachineStatusRecord | null })[]
-  sites: Site[]
   allSites: Site[]
   activeNetwork: NetworkKey
   networks: NetworkKey[]
   sitesByNetwork: Record<NetworkKey, Site[]>
   canSwitchNetworks: boolean
   selectedSiteId?: string | null
-  canSwitchSites: boolean
   canEdit: boolean
   canAdmin: boolean
   bootstrapEnabled: boolean
@@ -29,47 +27,101 @@ interface StaffDashboardTabsProps {
 
 export function StaffDashboardTabs({
   machines,
-  sites,
   allSites,
   activeNetwork,
   networks,
   sitesByNetwork,
   canSwitchNetworks,
   selectedSiteId,
-  canSwitchSites,
   canEdit,
   canAdmin,
   bootstrapEnabled,
 }: StaffDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState('status')
+  const [localNetwork, setLocalNetwork] = useState<NetworkKey>(activeNetwork)
+  const initialSites = sitesByNetwork[activeNetwork] || []
+  const [localSiteId, setLocalSiteId] = useState<string | undefined>(selectedSiteId || initialSites[0]?.id)
 
-  const onTimeCount = machines.filter((m) => m.currentStatus?.status === 'on_time' || !m.currentStatus).length
-  const delayedCount = machines.filter((m) => m.currentStatus?.status?.startsWith('delayed_')).length
-  const downCount = machines.filter((m) => m.currentStatus?.status?.startsWith('down_')).length
-  const maintenanceCount = machines.filter((m) => m.currentStatus?.status === 'maintenance').length
+  useEffect(() => {
+    setLocalNetwork(activeNetwork)
+  }, [activeNetwork])
+
+  useEffect(() => {
+    if (selectedSiteId) {
+      setLocalSiteId(selectedSiteId)
+    }
+  }, [selectedSiteId])
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.cookie = `${NETWORK_COOKIE_NAME}=${localNetwork}; path=/; max-age=31536000`
+    }
+  }, [localNetwork])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    url.searchParams.set('network', localNetwork)
+    if (localSiteId) {
+      url.searchParams.set('site', localSiteId)
+    } else {
+      url.searchParams.delete('site')
+    }
+    window.history.replaceState({}, '', url)
+  }, [localNetwork, localSiteId])
+
+  const availableSites = sitesByNetwork[localNetwork] || []
+  const canSwitchLocalSites = availableSites.length > 1
+
+  useEffect(() => {
+    if (!availableSites.length) {
+      setLocalSiteId(undefined)
+      return
+    }
+    if (!localSiteId || !availableSites.some((site) => site.id === localSiteId)) {
+      setLocalSiteId(availableSites[0].id)
+    }
+  }, [availableSites, localSiteId])
+
+  const visibleMachines = useMemo(() => {
+    if (!localSiteId) return []
+    return machines.filter((machine) => machine.site_id === localSiteId)
+  }, [machines, localSiteId])
+
+  const onTimeCount = visibleMachines.filter((m) => m.currentStatus?.status === 'on_time' || !m.currentStatus).length
+  const delayedCount = visibleMachines.filter((m) => m.currentStatus?.status?.startsWith('delayed_')).length
+  const downCount = visibleMachines.filter((m) => m.currentStatus?.status?.startsWith('down_')).length
+  const maintenanceCount = visibleMachines.filter((m) => m.currentStatus?.status === 'maintenance').length
 
   return (
-    <div className="p-6 lg:p-8" data-network={activeNetwork}>
+    <div className="p-6 lg:p-8" data-network={localNetwork}>
       <div className="flex flex-col gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground">LINAC Status Console</h1>
           <p className="text-muted-foreground mt-1">
-            {(allSites.find((s) => s.id === selectedSiteId)?.name) || 'All Sites'} · Staff can update machine status in real time
+            {(allSites.find((s) => s.id === localSiteId)?.name) || 'All Sites'} · Staff can update machine status in real time
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <NetworkSwitcher
-            activeNetwork={activeNetwork}
+            activeNetwork={localNetwork}
             networks={networks}
             sitesByNetwork={sitesByNetwork}
             disabled={!canSwitchNetworks}
+            enableRouting={false}
+            onChange={(nextNetwork) => {
+              setLocalNetwork(nextNetwork)
+              const nextSites = sitesByNetwork[nextNetwork] || []
+              setLocalSiteId(nextSites[0]?.id)
+            }}
           />
-          {canSwitchSites && (
+          {canSwitchLocalSites && (
             <SiteSwitcher
-              sites={sites}
-              currentSiteId={selectedSiteId || undefined}
+              sites={availableSites}
+              currentSiteId={localSiteId}
               persistSelection
+              onChange={(siteId) => setLocalSiteId(siteId)}
             />
           )}
         </div>
@@ -112,7 +164,7 @@ export function StaffDashboardTabs({
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {machines.map((machine) => (
+            {visibleMachines.map((machine) => (
               <MachineStatusCard
                 key={machine.id}
                 machine={machine}
@@ -121,7 +173,7 @@ export function StaffDashboardTabs({
             ))}
           </div>
 
-          {machines.length === 0 && (
+          {visibleMachines.length === 0 && (
             <div className="text-center py-12">
               <p className="text-muted-foreground">No machines found for this site.</p>
               {canAdmin && (
@@ -134,7 +186,7 @@ export function StaffDashboardTabs({
         </TabsContent>
 
         <TabsContent value="statistics">
-          <StatisticsTab siteId={selectedSiteId} machines={machines} />
+          <StatisticsTab siteId={localSiteId} machines={visibleMachines} />
         </TabsContent>
       </Tabs>
     </div>
