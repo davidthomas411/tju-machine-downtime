@@ -53,7 +53,7 @@ ADMIN_BOOTSTRAP_CODE=...
 ```sql
 update public.profiles
 set role = 'admin'
-where email = 'admin@tju.local';
+where email = 'xxxxxx';
 ```
 
 5) (Optional) Assign a default site for the admin user:
@@ -61,7 +61,7 @@ where email = 'admin@tju.local';
 ```sql
 update public.profiles
 set site_id = '00000000-0000-0000-0000-000000000001'
-where email = 'admin@tju.local';
+where email = 'xxxxxx';
 ```
 
 ### Admin bootstrap (in-app)
